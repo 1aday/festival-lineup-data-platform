@@ -1,0 +1,24 @@
+{
+  "id": 2659572,
+  "handle": "events",
+  "title": "20 Years of Dave Clarke Presents",
+  "subtitle": null,
+  "start_date_time": {
+    "date": "2025-10-24 23:00:00.000000",
+    "timezone_type": 3,
+    "timezone": "Europe/Amsterdam"
+  },
+  "show_start_date_time": true,
+  "end_date_time": {
+    "date": "2025-10-25 07:30:00.000000",
+    "timezone_type": 3,
+    "timezone": "Europe/Amsterdam"
+  },
+  "show_end_date_time": true,
+  "url": "https://www.amsterdam-dance-event.nl/en/program/2025/20-years-of-dave-clarke-presents/2659572/",
+  "venue": {
+    "title": "Melkweg"
+  },
+  "soldOut": false,
+  "categories": "Club nights / Techno"
+}

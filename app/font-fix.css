@@ -1,0 +1,11 @@
+/* Prevent font flash by hiding content until fonts are loaded */
+html {
+  visibility: hidden;
+  opacity: 0;
+}
+
+html.fonts-loaded {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.1s ease-in;
+}
