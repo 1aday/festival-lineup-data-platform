@@ -1531,23 +1531,56 @@ export default function HomePage() {
                   <div className="p-4 bg-black/30 backdrop-blur-sm border border-primary/20 rounded-lg space-y-4">
                     {/* Row 1: Venue, Event Type, Date */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Venue Filter */}
-                      <Select value={selectedVenue} onValueChange={setSelectedVenue}>
-                        <SelectTrigger className="bg-black/50 border-primary/30 font-mono text-xs uppercase hover:border-primary/50">
-                          <MapPin className="h-4 w-4 mr-2 text-primary" />
-                          <SelectValue placeholder="All Venues" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black border-primary/30 max-h-[300px]">
-                          <SelectItem value="all" className="font-mono text-xs uppercase">
-                            <span className="text-primary">All Venues</span>
-                          </SelectItem>
-                          {availableVenues.map((venue: string) => (
-                            <SelectItem key={venue} value={venue} className="font-mono text-xs">
-                              <span className="line-clamp-1">{venue}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {/* Venue Filter with Search */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full bg-black/50 border-primary/30 font-mono text-xs uppercase hover:border-primary/50 justify-start"
+                          >
+                            <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                            <span className="truncate">
+                              {selectedVenue === 'all' ? 'All Venues' : selectedVenue}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0 bg-black border-primary/30">
+                          <div className="p-2 border-b border-primary/20">
+                            <Input
+                              placeholder="Search venues..."
+                              value={venueSearch}
+                              onChange={(e) => setVenueSearch(e.target.value)}
+                              className="h-8 bg-black/50 border-primary/30 font-mono text-xs"
+                            />
+                          </div>
+                          <div className="max-h-[300px] overflow-y-auto">
+                            <button
+                              onClick={() => {
+                                setSelectedVenue('all');
+                                setVenueSearch('');
+                              }}
+                              className="w-full px-2 py-1.5 text-left hover:bg-primary/10 font-mono text-xs uppercase text-primary"
+                            >
+                              All Venues
+                            </button>
+                            {availableVenues
+                              .filter(venue => venue.toLowerCase().includes(venueSearch.toLowerCase()))
+                              .map(venue => (
+                                <button
+                                  key={venue}
+                                  onClick={() => {
+                                    setSelectedVenue(venue);
+                                    setVenueSearch('');
+                                  }}
+                                  className="w-full px-2 py-1.5 text-left hover:bg-primary/10 font-mono text-xs truncate"
+                                  title={venue}
+                                >
+                                  {venue}
+                                </button>
+                              ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
 
                       {/* Event Type Filter */}
                       <Select value={selectedEventType} onValueChange={setSelectedEventType}>
@@ -1674,6 +1707,34 @@ export default function HomePage() {
                       </div>
                     </div>
 
+                    {/* Row 4: BPM Range */}
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs uppercase text-primary/80">
+                        BPM Range: {minBpm} - {maxBpm}
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="60"
+                          max="200"
+                          value={minBpm}
+                          onChange={(e) => setMinBpm(parseInt(e.target.value))}
+                          className="flex-1 accent-primary"
+                        />
+                        <span className="font-mono text-xs text-primary w-10 text-center">{minBpm}</span>
+                        <span className="font-mono text-xs text-primary">to</span>
+                        <input
+                          type="range"
+                          min="60"
+                          max="200"
+                          value={maxBpm}
+                          onChange={(e) => setMaxBpm(parseInt(e.target.value))}
+                          className="flex-1 accent-primary"
+                        />
+                        <span className="font-mono text-xs text-primary w-10 text-center">{maxBpm}</span>
+                      </div>
+                    </div>
+
                     {/* Clear All Filters Button */}
                     <div className="flex justify-end">
                       <Button
@@ -1686,9 +1747,15 @@ export default function HomePage() {
                           setSelectedEventType('all');
                           setMinPopularity(0);
                           setMaxPopularity(100);
+                          setMinBpm(60);
+                          setMaxBpm(200);
                           setShowOnlyWithEvents(false);
                           setShowOnlyWithSpotify(false);
                           setSortBy('popularity');
+                          setGenreSearch('');
+                          setVenueSearch('');
+                          setEventTypeSearch('');
+                          setDateSearch('');
                         }}
                         variant="outline"
                         className="border-primary/20 hover:bg-primary/10 font-mono text-xs uppercase"
