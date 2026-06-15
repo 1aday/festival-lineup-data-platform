@@ -4,6 +4,8 @@ import { absoluteUrl, appBaseUrl, parseEntitySlug, slugifyEntity } from '@/lib/e
 import { fetchCloudflareData } from '@/lib/cloudflare-data';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { DBArtist, DBEvent } from '@/lib/types';
+import fallbackArtistsJson from '@/data/seo-artists.json';
+import fallbackEventsJson from '@/data/seo-events.json';
 
 export { absoluteUrl, appBaseUrl, parseEntitySlug, slugifyEntity };
 
@@ -164,11 +166,22 @@ function normalizeEvent(event: Partial<SeoEvent>): SeoEvent {
   } as SeoEvent;
 }
 
+function getFallbackSeoArtists() {
+  return (fallbackArtistsJson as Partial<SeoArtist>[]).map(normalizeArtist).filter((artist) => artist.is_active !== false);
+}
+
+function getFallbackSeoEvents() {
+  return (fallbackEventsJson as Partial<SeoEvent>[]).map(normalizeEvent).filter(hasSeoEventValue);
+}
+
 export const getSeoArtists = cache(async (): Promise<SeoArtist[]> => {
   const cloudflareRows = await fetchCloudflarePages<SeoArtist>('/api/artists', 250, 6000);
   if (cloudflareRows?.length) {
     return cloudflareRows.map(normalizeArtist).filter((artist) => artist.is_active !== false);
   }
+
+  const fallbackRows = getFallbackSeoArtists();
+  if (fallbackRows.length) return fallbackRows;
 
   if (!isSupabaseConfigured()) return [];
 
@@ -188,6 +201,9 @@ export const getSeoEvents = cache(async (): Promise<SeoEvent[]> => {
   if (cloudflareRows?.length) {
     return cloudflareRows.map(normalizeEvent).filter(hasSeoEventValue);
   }
+
+  const fallbackRows = getFallbackSeoEvents();
+  if (fallbackRows.length) return fallbackRows;
 
   if (!isSupabaseConfigured()) return [];
 
