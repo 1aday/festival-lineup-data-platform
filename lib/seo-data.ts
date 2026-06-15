@@ -1,6 +1,7 @@
 import { cache } from 'react';
 
 import { absoluteUrl, appBaseUrl, parseEntitySlug, slugifyEntity } from '@/lib/entity-slugs';
+import { fetchCloudflareData } from '@/lib/cloudflare-data';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { DBArtist, DBEvent } from '@/lib/types';
 
@@ -69,8 +70,6 @@ export type SeoArtistScoreRow = {
   reasons: string[];
 };
 
-const DEFAULT_DATA_URL = 'https://ade-data.amirjaffari.workers.dev';
-
 export const CURATED_GENRES: CuratedGenre[] = [
   { label: 'Techno', slug: 'techno', aliases: ['Techno', 'Peak Time Techno', 'Minimal Techno'], description: 'Techno artists, showcases, and club events across European electronic music festivals.' },
   { label: 'House', slug: 'house', aliases: ['House', 'Deep House', 'Tech House', 'Big Room House'], description: 'House music lineups, artists, venues, and festival events.' },
@@ -99,48 +98,12 @@ export const CURATED_GENRES: CuratedGenre[] = [
   { label: 'Audiovisual and Immersive Arts', slug: 'audiovisual-and-immersive-arts', aliases: ['Audiovisual and Immersive Arts', 'Visual Spectacles'], description: 'Audiovisual, immersive, and visual arts programming at electronic music festivals.' },
 ];
 
-const dataBaseUrl = () =>
-  (process.env.ADE_DATA_URL || process.env.NEXT_PUBLIC_ADE_DATA_URL || DEFAULT_DATA_URL).replace(/\/$/, '');
-
-function dataRequestVersion() {
-  if (process.env.ADE_DATA_VERSION) return process.env.ADE_DATA_VERSION;
-  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA;
-  return String(Math.floor(Date.now() / 60_000));
-}
-
-async function fetchJsonFromBase<T>(baseUrl: string, pathname: string): Promise<T | null> {
-  const url = new URL(`${baseUrl.replace(/\/$/, '')}${pathname.startsWith('/') ? pathname : `/${pathname}`}`);
-  url.searchParams.set('_lbv', dataRequestVersion());
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          accept: 'application/json',
-        },
-        cache: 'no-store',
-      });
-
-      if (!response.ok) throw new Error(`Cloudflare data returned ${response.status}`);
-
-      const text = await response.text();
-      try {
-        return JSON.parse(text) as T;
-      } catch {
-        return JSON.parse(text.replace(/[\u0000-\u001f]/g, ' ')) as T;
-      }
-    } catch {
-      if (attempt < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
-      }
-    }
-  }
-
-  return null;
-}
-
 async function fetchCloudflareJson<T>(pathname: string): Promise<T | null> {
-  return fetchJsonFromBase<T>(dataBaseUrl(), pathname);
+  try {
+    return await fetchCloudflareData<T>(pathname);
+  } catch {
+    return null;
+  }
 }
 
 async function fetchCloudflarePages<T>(pathname: string, pageSize: number, maxRows: number): Promise<T[] | null> {
