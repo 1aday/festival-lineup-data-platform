@@ -1,7 +1,9 @@
+const DEFAULT_DATA_URL = 'https://ade-data.amirjaffari.workers.dev';
+
 const cloudflareDataUrl =
   process.env.ADE_DATA_URL ||
   process.env.NEXT_PUBLIC_ADE_DATA_URL ||
-  '';
+  DEFAULT_DATA_URL;
 
 export function isCloudflareDataConfigured() {
   return /^https?:\/\//.test(cloudflareDataUrl);

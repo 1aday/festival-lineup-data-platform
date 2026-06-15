@@ -147,7 +147,7 @@ async function fetchCloudflarePages<T>(pathname: string, pageSize: number, maxRo
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const separator = pathname.includes('?') ? '&' : '?';
     const batch = await fetchCloudflareJson<T[]>(`${pathname}${separator}limit=${pageSize}&offset=${offset}`);
-    if (!batch) return rows.length ? rows : null;
+    if (!batch) return null;
 
     rows.push(...batch);
     if (batch.length < pageSize) break;
@@ -200,7 +200,7 @@ function normalizeEvent(event: Partial<SeoEvent>): SeoEvent {
 }
 
 export const getSeoArtists = cache(async (): Promise<SeoArtist[]> => {
-  const cloudflareRows = await fetchCloudflarePages<SeoArtist>('/api/artists', 750, 6000);
+  const cloudflareRows = await fetchCloudflarePages<SeoArtist>('/api/artists', 250, 6000);
   if (cloudflareRows?.length) {
     return cloudflareRows.map(normalizeArtist).filter((artist) => artist.is_active !== false);
   }
@@ -344,6 +344,16 @@ export async function getArtistEvents(artist: SeoArtist) {
 
 export async function findArtistBySlug(slug: string) {
   const { id, baseSlug } = parseEntitySlug(slug);
+  if (id && baseSlug) {
+    const searchRows = await fetchCloudflareJson<SeoArtist[]>(
+      `/api/artists?search=${encodeURIComponent(baseSlug.replace(/-/g, ' '))}&limit=25&offset=0`
+    );
+    const directMatch = searchRows
+      ?.map(normalizeArtist)
+      .find((artist) => Number(artist.ade_id || artist.id) === id || Number(artist.id) === id);
+    if (directMatch) return directMatch;
+  }
+
   const artists = await getSeoArtists();
   return artists.find((artist) => {
     if (id) return Number(artist.ade_id || artist.id) === id || Number(artist.id) === id;

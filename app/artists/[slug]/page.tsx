@@ -22,7 +22,8 @@ import {
   hasSeoArtistValue,
 } from '@/lib/seo-data';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 type PageProps = {
   params: Promise<{ slug: string }>;
