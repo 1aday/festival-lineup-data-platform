@@ -18,20 +18,40 @@ function dataRequestVersion() {
 export async function fetchCloudflareData<T>(pathname: string): Promise<T | null> {
   if (!isCloudflareDataConfigured()) return null;
 
-  const url = new URL(pathname, cloudflareDataUrl.endsWith('/') ? cloudflareDataUrl : `${cloudflareDataUrl}/`);
-  url.searchParams.set('_lbv', dataRequestVersion());
-  const response = await fetch(url, {
-    cache: 'no-store',
-    headers: {
-      accept: 'application/json',
-      'cache-control': 'no-cache',
-      pragma: 'no-cache',
-    },
-  });
+  let lastError: unknown;
 
-  if (!response.ok) {
-    throw new Error(`Cloudflare data fetch failed: ${response.status} ${url.pathname}`);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const url = new URL(pathname, cloudflareDataUrl.endsWith('/') ? cloudflareDataUrl : `${cloudflareDataUrl}/`);
+    url.searchParams.set('_lbv', dataRequestVersion());
+    url.searchParams.set('_retry', String(attempt));
+
+    try {
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          accept: 'application/json',
+          'cache-control': 'no-cache',
+          pragma: 'no-cache',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cloudflare data fetch failed: ${response.status} ${url.pathname}`);
+      }
+
+      const text = await response.text();
+      try {
+        return JSON.parse(text) as T;
+      } catch {
+        return JSON.parse(text.replace(/[\u0000-\u001f]/g, ' ')) as T;
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+      }
+    }
   }
 
-  return response.json() as Promise<T>;
+  throw lastError instanceof Error ? lastError : new Error('Cloudflare data fetch failed');
 }
