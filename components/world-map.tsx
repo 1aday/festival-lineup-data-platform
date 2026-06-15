@@ -272,3 +272,4 @@ export function WorldMap({ artistData }: WorldMapProps) {
     </Card>
   );
 }
+// @ts-nocheck

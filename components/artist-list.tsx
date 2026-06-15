@@ -357,7 +357,7 @@ export function ArtistList({ refreshTrigger = 0 }: { refreshTrigger?: number }) 
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                           >
-                            ADE
+                            Source
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         )}

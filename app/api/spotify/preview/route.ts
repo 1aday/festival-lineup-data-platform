@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { spotifyApi } from '@/lib/spotify-api';
+import { stripCountrySuffix } from '@/lib/artist-name';
 
 // Cached preview URLs to avoid hitting rate limits
 const previewCache = new Map<string, { url: string | null; expires: number }>();
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const artistName = searchParams.get('artist');
+    const sanitizedArtistName = artistName ? stripCountrySuffix(artistName) : null;
     const trackId = searchParams.get('trackId');
     
     if (!artistName && !trackId) {
@@ -19,8 +21,11 @@ export async function GET(request: NextRequest) {
     }
     
     // Check cache first
-    const cacheKey = trackId || artistName || '';
-    const cached = previewCache.get(cacheKey);
+    const cacheKey = trackId || sanitizedArtistName || artistName || '';
+    let cached = previewCache.get(cacheKey);
+    if (!cached && !trackId && sanitizedArtistName && sanitizedArtistName !== artistName) {
+      cached = previewCache.get(artistName);
+    }
     if (cached && cached.expires > Date.now()) {
       console.log('Returning cached preview URL for:', cacheKey);
       return NextResponse.json({
@@ -48,7 +53,8 @@ export async function GET(request: NextRequest) {
         }
       } else if (artistName) {
         // Search for artist and get top track
-        const artist = await spotifyApi.searchArtist(artistName);
+        const searchTerm = sanitizedArtistName || artistName;
+        const artist = await spotifyApi.searchArtist(searchTerm);
         if (artist) {
           const topTracks = await spotifyApi.getArtistTopTracks(artist.id, 'US');
           
@@ -147,14 +153,29 @@ export async function POST(request: NextRequest) {
       
       const batchPromises = batch.map(async (artistName: string) => {
         try {
+          const sanitizedArtistName = stripCountrySuffix(artistName);
+          const cacheKey = sanitizedArtistName || artistName;
+
           // Check if already cached
-          const cached = previewCache.get(artistName);
+          let cached = previewCache.get(cacheKey);
+          if (
+            !cached &&
+            sanitizedArtistName &&
+            sanitizedArtistName !== artistName
+          ) {
+            cached = previewCache.get(artistName);
+          }
           if (cached && cached.expires > Date.now()) {
-            return { artist: artistName, cached: true, previewUrl: cached.url };
+            return {
+              artist: artistName,
+              cached: true,
+              previewUrl: cached.url,
+            };
           }
           
           // Fetch from API
-          const artist = await spotifyApi.searchArtist(artistName);
+          const searchTerm = sanitizedArtistName || artistName;
+          const artist = await spotifyApi.searchArtist(searchTerm);
           if (!artist) {
             return { artist: artistName, error: 'Artist not found' };
           }
@@ -172,7 +193,7 @@ export async function POST(request: NextRequest) {
           }
           
           // Cache the result
-          previewCache.set(artistName, {
+          previewCache.set(cacheKey, {
             url: previewUrl,
             expires: Date.now() + CACHE_DURATION,
           });

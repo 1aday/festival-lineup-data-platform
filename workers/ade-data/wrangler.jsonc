@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "name": "ade-data",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-10",
+  "workers_dev": true,
+  "r2_buckets": [
+    {
+      "binding": "ADE_DATA",
+      "bucket_name": "ade-data"
+    }
+  ]
+}

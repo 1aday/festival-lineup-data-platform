@@ -1,16 +1,22 @@
 import axios from 'axios';
 import { ADEApiResponse, ADEArtist, ADEEvent } from './types';
 
+const DEFAULT_ADE_API_TIMEOUT = 45000;
+const parsedTimeout = Number(process.env.NEXT_PUBLIC_ADE_API_TIMEOUT);
+const ADE_API_TIMEOUT = Number.isFinite(parsedTimeout) && parsedTimeout > 0
+  ? parsedTimeout
+  : DEFAULT_ADE_API_TIMEOUT;
+
 export class ADEApiService {
   /**
-   * Fetch artists from ADE API via our proxy endpoint
+   * Fetch artists from the featured festival source API via our proxy endpoint
    */
   async fetchArtists(page: number = 0, fromDate?: string, toDate?: string): Promise<ADEApiResponse> {
     const from = fromDate || '2025-10-22';
     const to = toDate || '2025-10-26';
     const types = '8262,8263'; // Artist/Speaker types
 
-    // Use our API proxy endpoint instead of direct ADE API
+    // Use our API proxy endpoint instead of the direct source API
     const params = new URLSearchParams({
       page: page.toString(),
       from,
@@ -23,12 +29,15 @@ export class ADEApiService {
 
     try {
       const response = await axios.get<ADEApiResponse>(url, {
-        timeout: 15000, // 15 second timeout
+        timeout: ADE_API_TIMEOUT,
       });
 
       return response.data;
     } catch (error) {
       console.error(`Error fetching page ${page}:`, error);
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        throw new Error(`Featured festival artist request timed out after ${ADE_API_TIMEOUT}ms (page ${page})`);
+      }
       throw error;
     }
   }
@@ -73,7 +82,7 @@ export class ADEApiService {
   }
 
   /**
-   * Fetch events from ADE API via our proxy endpoint
+   * Fetch events from the featured festival source API via our proxy endpoint
    */
   async fetchEvents(page: number = 0, fromDate?: string, toDate?: string): Promise<ADEApiResponse<ADEEvent>> {
     const from = fromDate || '2025-10-22';
@@ -93,12 +102,15 @@ export class ADEApiService {
 
     try {
       const response = await axios.get<ADEApiResponse<ADEEvent>>(url, {
-        timeout: 15000, // 15 second timeout
+        timeout: ADE_API_TIMEOUT,
       });
 
       return response.data;
     } catch (error) {
       console.error(`Error fetching events page ${page}:`, error);
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        throw new Error(`Featured festival event request timed out after ${ADE_API_TIMEOUT}ms (page ${page})`);
+      }
       throw error;
     }
   }

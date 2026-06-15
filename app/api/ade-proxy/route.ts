@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const url = `${ADE_API_BASE}/program/filter/?section=${section}&type=${types}&from=${from}&to=${to}&page=${page}`;
 
-    console.log(`Fetching ADE API: Page ${page}`);
+    console.log(`Fetching featured festival source API: Page ${page}`);
 
     const response = await axios.get(url, {
       headers: getHeaders(),
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error('ADE API Proxy Error:', error);
+    console.error('Featured festival source API proxy error:', error);
     
     if (axios.isAxiosError(error)) {
       return NextResponse.json(
         { 
-          error: 'Failed to fetch ADE data', 
+          error: 'Failed to fetch featured festival data',
           message: error.message,
           status: error.response?.status 
         },

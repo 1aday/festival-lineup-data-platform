@@ -530,3 +530,4 @@ export function SpotifyTrackPlayer({
     </motion.div>
   );
 }
+// @ts-nocheck

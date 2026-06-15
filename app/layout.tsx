@@ -2,8 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ADE Artist Scraper",
-  description: "Amsterdam Dance Event artist database scraper with real-time sync",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ade-eta.vercel.app"),
+  title: {
+    default: "LineupBase | Electronic Music Artist Directory",
+    template: "%s | LineupBase",
+  },
+  description: "Find electronic music artists by country, genre, subgenre, event appearances, Spotify data, images, and source metadata.",
+  openGraph: {
+    title: "LineupBase Artist Directory",
+    description: "Electronic music artist directory for people and firms finding artists by country, genre, subgenre, and metadata depth.",
+    type: "website",
+    url: "/",
+  },
 };
 
 export default function RootLayout({

@@ -79,7 +79,7 @@ export function OverviewStats({ stats }: OverviewStatsProps) {
     {
       title: 'Total Artists',
       value: stats.artists.toLocaleString(),
-      subtitle: 'Performing at ADE 2025',
+      subtitle: 'Featured festival lineup',
       icon: <Music className="h-5 w-5 text-white" />,
       color: 'from-purple-500 to-pink-500',
       trend: 12

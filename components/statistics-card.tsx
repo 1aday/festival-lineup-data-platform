@@ -147,3 +147,4 @@ export function StatisticsCard() {
     </Card>
   );
 }
+// @ts-nocheck

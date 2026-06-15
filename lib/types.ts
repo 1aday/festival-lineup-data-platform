@@ -1,4 +1,4 @@
-// ADE API Types
+// Featured festival source API types
 export interface ADEArtist {
   id: number;
   handle: string;
@@ -77,6 +77,7 @@ export interface DBArtist {
   artist_type?: string | null;
   
   // Genres
+  genres?: string[] | null; // Main genres array from database
   primary_genres?: string | null;
   secondary_genres?: string | null;
   all_genres?: string | null;
@@ -113,6 +114,30 @@ export interface DBArtist {
   related_2_id?: string | null;
   related_3?: string | null;
   related_3_id?: string | null;
+
+  // Source-page socials and contact surfaces
+  social_links?: Record<string, string> | null;
+  social_link_rows?: Array<{ type: string; url: string; label?: string | null; source?: string | null }> | null;
+  social_link_count?: number | null;
+  socials_match_status?: 'found' | 'none' | 'error' | string | null;
+  socials_last_checked_at?: string | null;
+  socials_enrichment_version?: string | null;
+  socials_error?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
+  x_url?: string | null;
+  youtube_url?: string | null;
+  soundcloud_url?: string | null;
+  bandcamp_url?: string | null;
+  tiktok_url?: string | null;
+  ra_url?: string | null;
+  beatport_url?: string | null;
+  discogs_url?: string | null;
+  mixcloud_url?: string | null;
+  apple_music_url?: string | null;
+  deezer_url?: string | null;
+  linktree_url?: string | null;
+  website_url?: string | null;
   
   // Metadata
   enriched_at?: string | null;
@@ -169,6 +194,13 @@ export interface ArtistChange {
   new_data: any;
 }
 
+export interface SyncLogEntry {
+  id: string;
+  timestamp: string;
+  level: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+}
+
 export interface SyncProgress {
   currentPage: number;
   totalPages: number | null;
@@ -178,4 +210,5 @@ export interface SyncProgress {
   status: 'idle' | 'fetching' | 'processing' | 'completed' | 'error';
   message: string;
   currentBatch: ADEArtist[];
+  logs: SyncLogEntry[];
 }

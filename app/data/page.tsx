@@ -12,6 +12,7 @@ import { VenueAnalytics } from '@/components/dashboard/venue-analytics';
 import { CategoryInsights } from '@/components/dashboard/category-insights';
 import { WorldMap } from '@/components/world-map';
 import { AdeDataTable } from '@/components/ade-data-table';
+import { ConversionCtaStrip, MobileConversionBar } from '@/components/monetization/app-ctas';
 import { 
   LayoutDashboard, 
   Map, 
@@ -194,14 +195,14 @@ export default function DataPage() {
           >
             <Database className="h-16 w-16 text-purple-500 mx-auto" />
           </motion.div>
-          <p className="text-muted-foreground">Loading ADE data...</p>
+          <p className="text-muted-foreground">Loading festival data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background pb-16 lg:pb-0">
       {/* Header */}
       <motion.div 
         ref={headerRef}
@@ -218,10 +219,10 @@ export default function DataPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-4">
-                  ADE 2025 Analytics
+                  European Festival Analytics
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                  Comprehensive insights into Amsterdam Dance Event
+                  Featured festival: Amsterdam Dance Event 2025
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -237,6 +238,12 @@ export default function DataPage() {
             </div>
             
             <OverviewStats stats={stats} />
+            <ConversionCtaStrip
+              variant="data"
+              artistCount={stats.artists}
+              eventCount={stats.events}
+              className="mt-6"
+            />
           </div>
         </div>
       </motion.div>
@@ -294,6 +301,7 @@ export default function DataPage() {
           </Tabs>
         </div>
       </div>
+      <MobileConversionBar />
     </div>
   );
 }

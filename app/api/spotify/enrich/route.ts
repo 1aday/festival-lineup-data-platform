@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { spotifyApi, type AudioFeatures } from '@/lib/spotify-api';
+import { stripCountrySuffix } from '@/lib/artist-name';
 import { supabase } from '@/lib/supabase';
 import { saveImageToSupabase } from '@/lib/image-storage';
 
@@ -35,18 +36,79 @@ function computeSoundDescriptor(features: {
   return descriptors.slice(0, 3).join(' / ');
 }
 
+function createSeededRandom(seed: string): () => number {
+  let hash = 0;
+
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+
+  if (hash === 0) {
+    hash = 0x9e3779b9;
+  }
+
+  return () => {
+    hash ^= hash << 13;
+    hash ^= hash >>> 17;
+    hash ^= hash << 5;
+    const normalized = (hash >>> 0) / 4294967295;
+    return normalized;
+  };
+}
+
+const clamp = (value: number, min = 0, max = 1) => Math.min(Math.max(value, min), max);
+
+function extractSpotifyIdFromUrl(url?: string | null): string | null {
+  if (!url) return null;
+
+  const patterns = [
+    /spotify\.com\/artist\/([a-zA-Z0-9]+)/,
+    /open\.spotify\.com\/artist\/([a-zA-Z0-9]+)/,
+    /spotify:artist:([a-zA-Z0-9]+)/
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+type SyntheticFeatureSet = Pick<
+  AudioFeatures,
+  | 'energy'
+  | 'danceability'
+  | 'valence'
+  | 'tempo'
+  | 'acousticness'
+  | 'instrumentalness'
+  | 'liveness'
+  | 'speechiness'
+  | 'loudness'
+>;
+
 // Generate synthetic audio features based on genre and popularity
-function generateSyntheticFeatures(genres: string[], popularity: number): any {
-  // Base values with some randomness
-  let energy = 0.5 + (Math.random() * 0.2 - 0.1);
-  let danceability = 0.6 + (Math.random() * 0.2 - 0.1);
-  let valence = 0.5 + (Math.random() * 0.2 - 0.1);
-  let tempo = 120 + Math.random() * 40 - 20;
-  let acousticness = 0.2 + (Math.random() * 0.1 - 0.05);
-  let instrumentalness = 0.1 + (Math.random() * 0.1 - 0.05);
-  let liveness = 0.2 + (Math.random() * 0.1 - 0.05);
-  let speechiness = 0.05 + (Math.random() * 0.05 - 0.025);
-  let loudness = -8 + Math.random() * 4 - 2;
+function generateSyntheticFeatures(
+  genres: string[],
+  popularity: number,
+  seed: string
+): SyntheticFeatureSet {
+  const rand = createSeededRandom(`${seed}|${genres.join(',')}|${popularity}`);
+
+  // Base values with deterministic pseudo-randomness
+  let energy = 0.5 + (rand() * 0.2 - 0.1);
+  let danceability = 0.6 + (rand() * 0.2 - 0.1);
+  let valence = 0.5 + (rand() * 0.2 - 0.1);
+  let tempo = 120 + rand() * 40 - 20;
+  let acousticness = 0.2 + (rand() * 0.1 - 0.05);
+  let instrumentalness = 0.1 + (rand() * 0.1 - 0.05);
+  let liveness = 0.2 + (rand() * 0.1 - 0.05);
+  let speechiness = 0.05 + (rand() * 0.05 - 0.025);
+  let loudness = -8 + rand() * 4 - 2;
   
   // Adjust based on genres
   const genreStr = genres.join(' ').toLowerCase();
@@ -54,18 +116,18 @@ function generateSyntheticFeatures(genres: string[], popularity: number): any {
   if (genreStr.includes('house') || genreStr.includes('techno') || genreStr.includes('dance')) {
     energy += 0.2;
     danceability += 0.2;
-    tempo = 125 + Math.random() * 10;
+    tempo = 125 + rand() * 10;
     instrumentalness += 0.2;
   }
   if (genreStr.includes('ambient') || genreStr.includes('chill')) {
     energy -= 0.3;
     valence -= 0.1;
-    tempo = 90 + Math.random() * 20;
+    tempo = 90 + rand() * 20;
   }
   if (genreStr.includes('trance') || genreStr.includes('edm')) {
     energy += 0.3;
     valence += 0.2;
-    tempo = 138 + Math.random() * 10;
+    tempo = 138 + rand() * 10;
   }
   if (genreStr.includes('acoustic') || genreStr.includes('folk')) {
     acousticness += 0.5;
@@ -77,13 +139,13 @@ function generateSyntheticFeatures(genres: string[], popularity: number): any {
   }
   
   // Normalize values to 0-1 range
-  energy = Math.max(0, Math.min(1, energy));
-  danceability = Math.max(0, Math.min(1, danceability));
-  valence = Math.max(0, Math.min(1, valence));
-  acousticness = Math.max(0, Math.min(1, acousticness));
-  instrumentalness = Math.max(0, Math.min(1, instrumentalness));
-  liveness = Math.max(0, Math.min(1, liveness));
-  speechiness = Math.max(0, Math.min(1, speechiness));
+  energy = clamp(energy);
+  danceability = clamp(danceability);
+  valence = clamp(valence);
+  acousticness = clamp(acousticness);
+  instrumentalness = clamp(instrumentalness);
+  liveness = clamp(liveness);
+  speechiness = clamp(speechiness);
   
   return {
     energy,
@@ -115,27 +177,116 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if artist already has Spotify data (unless forcing override)
-    if (!forceOverride) {
-      const { data: existingArtist } = await supabase
-        .from('artists')
-        .select('spotify_id, enriched_at')
-        .eq('id', artistId)
-        .single();
-      
-      if (existingArtist?.spotify_id) {
-        console.log(`Artist ${artistName} already enriched, skipping (use forceOverride to re-enrich)`);
-        return NextResponse.json({
-          success: false,
-          error: 'Artist already enriched',
-          enriched_at: existingArtist.enriched_at
-        });
+    const {
+      data: existingArtist,
+      error: existingArtistError
+    } = await supabase
+      .from('artists')
+      .select('spotify_id, enriched_at, spotify_url, country_value, country_label')
+      .eq('id', artistId)
+      .single();
+
+    if (existingArtistError) {
+      console.warn('Failed to load existing artist metadata before enrichment:', existingArtistError);
+    }
+
+    if (!forceOverride && existingArtist?.spotify_id) {
+      console.log(`Artist ${artistName} already enriched, skipping (use forceOverride to re-enrich)`);
+      return NextResponse.json({
+        success: false,
+        error: 'Artist already enriched',
+        enriched_at: existingArtist.enriched_at
+      });
+    }
+
+    const sanitizedArtistName = stripCountrySuffix(
+      artistName,
+      existingArtist?.country_value,
+      existingArtist?.country_label
+    );
+
+    if (sanitizedArtistName && sanitizedArtistName !== artistName) {
+      console.log(
+        `Sanitized artist name from "${artistName}" to "${sanitizedArtistName}" before Spotify lookup`
+      );
+    }
+
+    let spotifyArtist: Awaited<ReturnType<typeof spotifyApi.searchArtist>> = null;
+    let matchedVia: string | null = null;
+
+    const spotifyIdCandidates: Array<{ id: string; source: 'existing-id' | 'ade-url' }> = [];
+
+    if (existingArtist?.spotify_id) {
+      spotifyIdCandidates.push({ id: existingArtist.spotify_id, source: 'existing-id' });
+    }
+
+    const spotifyIdFromUrl = extractSpotifyIdFromUrl(existingArtist?.spotify_url);
+    if (
+      spotifyIdFromUrl &&
+      !spotifyIdCandidates.some(candidate => candidate.id === spotifyIdFromUrl)
+    ) {
+      spotifyIdCandidates.push({ id: spotifyIdFromUrl, source: 'ade-url' });
+      console.log(`Extracted Spotify artist ID ${spotifyIdFromUrl} from ADE Spotify URL`);
+    }
+
+    for (const candidate of spotifyIdCandidates) {
+      try {
+        console.log(`Attempting Spotify lookup by ${candidate.source}: ${candidate.id}`);
+        const artistById = await spotifyApi.getArtistById(candidate.id);
+        if (artistById) {
+          spotifyArtist = artistById;
+          matchedVia = candidate.source;
+          break;
+        }
+      } catch (idLookupError) {
+        console.warn(
+          `Spotify lookup by ${candidate.source} failed for ${candidate.id}:`,
+          idLookupError
+        );
       }
     }
 
-    // Search for the artist on Spotify
-    console.log(`Searching Spotify for artist: ${artistName} (force override: ${forceOverride})`);
-    
+    const searchAttempts: Array<{ query: string; source: 'sanitized' | 'original' }> = [];
+
+    if (!spotifyArtist) {
+      const normalizedSanitized = sanitizedArtistName?.trim();
+      if (normalizedSanitized) {
+        searchAttempts.push({ query: normalizedSanitized, source: 'sanitized' });
+      }
+      if (!searchAttempts.some(attempt => attempt.query === artistName) && artistName) {
+        searchAttempts.push({ query: artistName, source: 'original' });
+      }
+
+      for (const attempt of searchAttempts) {
+        console.log(
+          `Searching Spotify for artist (${attempt.source}) with query: ${attempt.query} (force override: ${forceOverride})`
+        );
+        const result = await spotifyApi.searchArtist(attempt.query);
+        if (result) {
+          spotifyArtist = result;
+          matchedVia = attempt.source === 'sanitized' ? 'sanitized-search' : 'search';
+          break;
+        }
+      }
+    }
+
+    if (!spotifyArtist) {
+      return NextResponse.json(
+        {
+          error: 'Artist not found on Spotify',
+          searched: sanitizedArtistName || artistName,
+          originalName: artistName,
+          searchAttempts: searchAttempts.map(attempt => attempt.query),
+          attemptedIds: spotifyIdCandidates.map(candidate => candidate.id)
+        },
+        { status: 404 }
+      );
+    }
+
+    console.log(
+      `Spotify artist resolved via ${matchedVia ?? 'search'}: ${spotifyArtist.id} (${spotifyArtist.name})`
+    );
+
     // IMPORTANT: Spotify enrichment ONLY updates Spotify-specific fields
     // Fields preserved from ADE/other sources:
     // - title (artist name from ADE)
@@ -144,15 +295,6 @@ export async function POST(request: NextRequest) {
     // - ade_id, url (ADE identifiers)
     // Fields updated from Spotify:
     // - spotify_* fields, image_url, genres, popularity, followers, audio features, etc.
-    
-    const spotifyArtist = await spotifyApi.searchArtist(artistName);
-
-    if (!spotifyArtist) {
-      return NextResponse.json(
-        { error: 'Artist not found on Spotify', searched: artistName },
-        { status: 404 }
-      );
-    }
 
     // Get all required data in parallel
     const [topTracks, relatedArtists] = await Promise.all([
@@ -179,17 +321,21 @@ export async function POST(request: NextRequest) {
           // This is a fallback when the API doesn't allow audio-features endpoint
           const syntheticFeatures = generateSyntheticFeatures(
             spotifyArtist.genres || [],
-            spotifyArtist.popularity
+            spotifyArtist.popularity,
+            spotifyArtist.id
           );
 
           // Create synthetic audio features for each track
-          audioFeatures = trackIds.map(id => ({
-            id,
-            ...syntheticFeatures,
-            // Add slight variations for each track
-            energy: Math.max(0, Math.min(1, syntheticFeatures.energy + (Math.random() * 0.1 - 0.05))),
-            danceability: Math.max(0, Math.min(1, syntheticFeatures.danceability + (Math.random() * 0.1 - 0.05))),
-          }));
+          audioFeatures = trackIds.map(id => {
+            const trackRand = createSeededRandom(`${spotifyArtist.id}|${id}`);
+
+            return {
+              id,
+              ...syntheticFeatures,
+              energy: clamp(syntheticFeatures.energy + (trackRand() * 0.1 - 0.05)),
+              danceability: clamp(syntheticFeatures.danceability + (trackRand() * 0.1 - 0.05))
+            };
+          });
           console.log('Generated synthetic audio features for', trackIds.length, 'tracks');
         } else {
           // Debug: log first audio feature if we got real data
@@ -205,17 +351,21 @@ export async function POST(request: NextRequest) {
         // This is a fallback when the API doesn't allow audio-features endpoint
         const syntheticFeatures = generateSyntheticFeatures(
           spotifyArtist.genres || [],
-          spotifyArtist.popularity
+          spotifyArtist.popularity,
+          spotifyArtist.id
         );
 
         // Create synthetic audio features for each track
-        audioFeatures = trackIds.map(id => ({
-          id,
-          ...syntheticFeatures,
-          // Add slight variations for each track
-          energy: Math.max(0, Math.min(1, syntheticFeatures.energy + (Math.random() * 0.1 - 0.05))),
-          danceability: Math.max(0, Math.min(1, syntheticFeatures.danceability + (Math.random() * 0.1 - 0.05))),
-        }));
+        audioFeatures = trackIds.map(id => {
+          const trackRand = createSeededRandom(`${spotifyArtist.id}|${id}`);
+
+          return {
+            id,
+            ...syntheticFeatures,
+            energy: clamp(syntheticFeatures.energy + (trackRand() * 0.1 - 0.05)),
+            danceability: clamp(syntheticFeatures.danceability + (trackRand() * 0.1 - 0.05))
+          };
+        });
         console.log('Generated synthetic audio features for', trackIds.length, 'tracks');
       }
       
@@ -390,28 +540,27 @@ export async function POST(request: NextRequest) {
     // First get existing data to preserve non-Spotify fields
     const { data: checkData, error: checkError } = await supabase
       .from('artists')
-      .select('id, title, country, country_value, country_label, subtitle, ade_id, url')
+      .select('id, title, country_value, country_label, subtitle, ade_id, url')
       .eq('id', artistId)
       .single();
-    
-    if (!checkError && checkData) {
-      // Update artist with enriched data
-      try {
-        const { error: updateError } = await supabase
-          .from('artists')
-          .update(enrichedData)
-          .eq('id', artistId);
-        
-        if (updateError) {
-          console.error('Database update error:', updateError);
-          // Continue anyway - return the data even if DB update fails
-        } else {
-          console.log(`Successfully enriched ${artistName} in database`);
-        }
-      } catch (updateError) {
-        console.error('Update error:', updateError);
-        // Continue anyway - return the data even if DB update fails
+
+    if (checkError) {
+      console.warn('Unable to fetch artist metadata prior to update:', checkError);
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('artists')
+        .update(enrichedData)
+        .eq('id', artistId);
+
+      if (updateError) {
+        console.error('Database update error:', updateError);
+      } else {
+        console.log(`Successfully enriched ${artistName} in database`);
       }
+    } catch (updateError) {
+      console.error('Update error:', updateError);
     }
 
     return NextResponse.json({

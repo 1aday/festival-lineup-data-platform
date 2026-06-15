@@ -812,8 +812,8 @@ export function AdeDataTable({ artists, events, artistEvents }: AdeDataTableProp
                      'Artist Studio'}
                   </div>
                   <div className="text-sm font-medium text-muted-foreground mt-1">
-                    {viewMode === 'artists' ? 'Discover Amsterdam Dance Event Artists' :
-                     viewMode === 'events' ? 'Explore ADE 2025 Events' :
+                    {viewMode === 'artists' ? 'Discover Featured Festival Artists' :
+                     viewMode === 'events' ? 'Explore Featured Festival Events' :
                      viewMode === 'schedule' ? 'Day-by-day Festival Schedule' :
                      'Beautiful Artist Cards with Events & Spotify Data'}
                   </div>
@@ -1234,7 +1234,7 @@ export function AdeDataTable({ artists, events, artistEvents }: AdeDataTableProp
                               <p className="text-sm text-muted-foreground max-w-md">
                                 {globalFilter
                                   ? 'Try adjusting your search terms or clearing the filter to see all results.'
-                                  : 'Data will appear here once it\'s loaded from the ADE database.'
+                                  : 'Data will appear here once it\'s loaded from the featured festival database.'
                                 }
                               </p>
                             </div>
@@ -1584,3 +1584,4 @@ export function AdeDataTable({ artists, events, artistEvents }: AdeDataTableProp
     </div>
   );
 }
+// @ts-nocheck

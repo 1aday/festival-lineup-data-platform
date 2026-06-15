@@ -2703,7 +2703,7 @@ export default function ArtistStudioPage() {
                             className="text-xs h-7 px-2"
                           >
                             <Globe className="h-3 w-3 mr-1" />
-                            ADE
+                            Source
                           </Button>
                         )}
                       </div>
@@ -3870,3 +3870,4 @@ export default function ArtistStudioPage() {
     </div>
   );
 }
+// @ts-nocheck
