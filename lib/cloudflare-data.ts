@@ -23,15 +23,12 @@ export async function fetchCloudflareData<T>(pathname: string): Promise<T | null
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const url = new URL(pathname, cloudflareDataUrl.endsWith('/') ? cloudflareDataUrl : `${cloudflareDataUrl}/`);
     url.searchParams.set('_lbv', dataRequestVersion());
-    url.searchParams.set('_retry', String(attempt));
 
     try {
       const response = await fetch(url, {
         cache: 'no-store',
         headers: {
           accept: 'application/json',
-          'cache-control': 'no-cache',
-          pragma: 'no-cache',
         },
       });
 

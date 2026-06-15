@@ -102,18 +102,13 @@ export const CURATED_GENRES: CuratedGenre[] = [
 const dataBaseUrl = () =>
   (process.env.ADE_DATA_URL || process.env.NEXT_PUBLIC_ADE_DATA_URL || DEFAULT_DATA_URL).replace(/\/$/, '');
 
-function deploymentApiBaseUrl() {
-  if (!process.env.VERCEL_URL) return null;
-  return `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')}`;
-}
-
 function dataRequestVersion() {
   if (process.env.ADE_DATA_VERSION) return process.env.ADE_DATA_VERSION;
   if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA;
   return String(Math.floor(Date.now() / 60_000));
 }
 
-async function fetchJsonFromBase<T>(baseUrl: string, pathname: string, rejectDemo = false): Promise<T | null> {
+async function fetchJsonFromBase<T>(baseUrl: string, pathname: string): Promise<T | null> {
   const url = new URL(`${baseUrl.replace(/\/$/, '')}${pathname.startsWith('/') ? pathname : `/${pathname}`}`);
   url.searchParams.set('_lbv', dataRequestVersion());
 
@@ -122,14 +117,11 @@ async function fetchJsonFromBase<T>(baseUrl: string, pathname: string, rejectDem
       const response = await fetch(url.toString(), {
         headers: {
           accept: 'application/json',
-          'cache-control': 'no-cache',
-          pragma: 'no-cache',
         },
         cache: 'no-store',
       });
 
       if (!response.ok) throw new Error(`Cloudflare data returned ${response.status}`);
-      if (rejectDemo && response.headers.get('x-demo-data') === '1') throw new Error('App API returned demo data');
 
       const text = await response.text();
       try {
@@ -148,12 +140,6 @@ async function fetchJsonFromBase<T>(baseUrl: string, pathname: string, rejectDem
 }
 
 async function fetchCloudflareJson<T>(pathname: string): Promise<T | null> {
-  const appBaseUrl = deploymentApiBaseUrl();
-  if (appBaseUrl) {
-    const appRows = await fetchJsonFromBase<T>(appBaseUrl, pathname, true);
-    if (appRows) return appRows;
-  }
-
   return fetchJsonFromBase<T>(dataBaseUrl(), pathname);
 }
 
