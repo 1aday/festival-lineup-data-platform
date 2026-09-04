@@ -113,9 +113,9 @@ export async function GET(_req: NextRequest) {
         // 2) Followed artists (paginated via next URL)
         let url: string | null = 'https://api.spotify.com/v1/me/following?type=artist&limit=50';
         while (url) {
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          const res: Response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
           if (!res.ok) break;
-          const data = await res.json();
+          const data: { artists?: { items?: SpotifyArtist[]; next?: string | null } } = await res.json();
           const items: SpotifyArtist[] = data?.artists?.items || [];
           for (const a of items) {
             followedIds.add(a.id);
@@ -151,9 +151,9 @@ export async function GET(_req: NextRequest) {
         // 4) Recently played
         let recentUrl: string | null = 'https://api.spotify.com/v1/me/player/recently-played?limit=50';
         while (recentUrl) {
-          const res = await fetch(recentUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+          const res: Response = await fetch(recentUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
           if (!res.ok) break;
-          const data = await res.json();
+          const data: { items?: Array<{ track?: { artists?: Array<{ id: string }> } }>; next?: string | null } = await res.json();
           const items = data?.items || [];
           for (const item of items) {
             for (const a of item?.track?.artists || []) {

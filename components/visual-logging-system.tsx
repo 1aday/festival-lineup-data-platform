@@ -171,7 +171,7 @@ export function VisualLoggingSystem({ logs, isRunning, onClearLogs, onExportLogs
       // Process all logs to extract live data
       const newArtists = new Map(liveArtists);
       const newEvents = new Map(liveEvents);
-      let newStats = { ...stats };
+      const newStats = { ...stats };
 
       logs.forEach(log => {
         if (log.visualData) {

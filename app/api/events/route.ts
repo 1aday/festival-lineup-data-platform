@@ -5,15 +5,13 @@ import { fetchCloudflareData } from '@/lib/cloudflare-data';
 import { getDemoEvents } from '@/lib/demo-data';
 import { isFetchFailure } from '@/lib/monetization-server';
 
-type EventArtistJoin = {
-  artists: {
+type EventArtist = {
     title: string;
     image_url: string | null;
     primary_genres: string | null;
     secondary_genres: string | null;
     energy_mean: number | null;
     [key: string]: unknown;
-  };
 };
 
 export async function GET(request: NextRequest) {
@@ -155,16 +153,16 @@ export async function GET(request: NextRequest) {
 
     // Process events to include artists and calculate averages
     const processedEvents = events?.map(event => {
-      const artists = event.artist_events?.map((ae: EventArtistJoin) => {
-        const artist = ae.artists;
-        return {
+      const artists = event.artist_events?.flatMap((ae) => {
+        const artist = (Array.isArray(ae.artists) ? ae.artists[0] : ae.artists) as EventArtist | undefined;
+        return artist ? [{
           ...artist,
           spotify_name: artist.title, // Add spotify_name for compatibility
           spotify_image_url: artist.image_url, // Add spotify_image_url for compatibility
           genres: artist.primary_genres ? 
             artist.primary_genres.split('|').filter(Boolean) : 
             (artist.secondary_genres ? artist.secondary_genres.split('|').filter(Boolean) : [])
-        };
+        }] : [];
       }) || [];
 
       // Calculate average energy for the event

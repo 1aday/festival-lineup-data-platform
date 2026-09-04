@@ -108,7 +108,7 @@ function generateSyntheticFeatures(
   let instrumentalness = 0.1 + (rand() * 0.1 - 0.05);
   let liveness = 0.2 + (rand() * 0.1 - 0.05);
   let speechiness = 0.05 + (rand() * 0.05 - 0.025);
-  let loudness = -8 + rand() * 4 - 2;
+  const loudness = -8 + rand() * 4 - 2;
   
   // Adjust based on genres
   const genreStr = genres.join(' ').toLowerCase();

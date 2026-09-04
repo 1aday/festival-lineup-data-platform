@@ -15,7 +15,7 @@ export function getStripe() {
 
   if (!stripeClient) {
     stripeClient = new Stripe(secretKey, {
-      apiVersion: '2026-02-25.clover',
+      apiVersion: '2026-05-27.dahlia',
       typescript: true,
     });
   }
