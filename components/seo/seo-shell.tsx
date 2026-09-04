@@ -18,7 +18,7 @@ export function SeoShell({
       <header className="border-b border-border/70 bg-background/95">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <Link href="/" className="text-lg font-semibold tracking-tight">
-            LineupBase
+            Festival Lineup Data Platform
           </Link>
           <nav className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground" aria-label="Primary">
             <Link className="hover:text-foreground" href="/artists">Artists</Link>
@@ -48,7 +48,7 @@ export function SeoShell({
       </main>
 
       <footer className="border-t border-border/50 px-5 py-8 text-center text-sm text-muted-foreground">
-        <Link href="/">LineupBase</Link>
+        <Link href="/">Festival Lineup Data Platform</Link>
         <span className="mx-2">·</span>
         <Link href="/countries">Countries</Link>
         <span className="mx-2">·</span>
