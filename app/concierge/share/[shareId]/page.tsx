@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
 interface PageProps {
-  params: { shareId: string };
+  params: Promise<{ shareId: string }>;
 }
 
 interface SharedEvent {
@@ -19,7 +19,7 @@ interface SharedEvent {
 }
 
 export default async function ConciergeSharePage({ params }: PageProps) {
-  const { shareId } = params;
+  const { shareId } = await params;
 
   const { data: order } = await supabase
     .from('concierge_orders')

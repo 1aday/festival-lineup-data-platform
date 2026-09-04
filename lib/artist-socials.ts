@@ -2,7 +2,6 @@ import type { DBArtist } from '@/lib/types';
 
 export type ArtistWithSocials = Partial<DBArtist> & {
   social_links?: Record<string, string | null | undefined> | null;
-  [key: string]: unknown;
 };
 
 export const ARTIST_SOCIAL_PLATFORMS = [
@@ -27,9 +26,10 @@ function stringValue(value: unknown) {
 
 export function getArtistSocialLinks(artist: ArtistWithSocials) {
   const seen = new Set<string>();
+  const record = artist as Record<string, unknown>;
 
   return ARTIST_SOCIAL_PLATFORMS.flatMap((platform) => {
-    const direct = stringValue(artist[platform.field]);
+    const direct = stringValue(record[platform.field]);
     const nested = stringValue(artist.social_links?.[platform.key]);
     const url = direct || nested;
     if (!url || seen.has(url)) return [];

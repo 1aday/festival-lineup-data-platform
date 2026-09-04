@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // Check cache first
     const cacheKey = trackId || sanitizedArtistName || artistName || '';
     let cached = previewCache.get(cacheKey);
-    if (!cached && !trackId && sanitizedArtistName && sanitizedArtistName !== artistName) {
+    if (!cached && !trackId && artistName && sanitizedArtistName && sanitizedArtistName !== artistName) {
       cached = previewCache.get(artistName);
     }
     if (cached && cached.expires > Date.now()) {

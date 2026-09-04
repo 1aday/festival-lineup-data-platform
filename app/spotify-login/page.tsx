@@ -479,7 +479,7 @@ export default function SpotifyLoginPage() {
                             size="sm"
                             variant="secondary"
                             className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700"
-                            onClick={() => window.open(artist.spotify_url, '_blank')}
+                            onClick={() => window.open(artist.spotify_url ?? undefined, '_blank')}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>

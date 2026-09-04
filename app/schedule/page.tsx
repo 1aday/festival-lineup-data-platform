@@ -237,8 +237,9 @@ export default function SchedulePage() {
   };
 
   const getEventEnergyColor = (event: ScheduleEvent) => {
-    const avgEnergy = event.artists?.reduce((sum, artist) => 
-      sum + (artist.energy_mean || 0), 0) / (event.artists?.length || 1);
+    const eventArtists = event.artists ?? [];
+    const avgEnergy = eventArtists.reduce((sum, artist) =>
+      sum + (artist.energy_mean || 0), 0) / Math.max(eventArtists.length, 1);
     
     if (avgEnergy > 0.7) return 'bg-red-100 border-red-300';
     if (avgEnergy > 0.4) return 'bg-yellow-100 border-yellow-300';

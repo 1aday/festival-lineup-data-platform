@@ -114,7 +114,7 @@ export function LoggingSystem({ logs, isRunning, onClearLogs, onExportLogs, clas
 
   // Filter and sort logs
   const filteredLogs = useMemo(() => {
-    let filtered = logs.filter(log => {
+    const filtered = logs.filter(log => {
       const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            log.details?.toString().toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;

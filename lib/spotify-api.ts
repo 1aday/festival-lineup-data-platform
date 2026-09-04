@@ -64,9 +64,9 @@ class SpotifyAPI {
   private clientSecret: string;
 
   constructor() {
-    // These should only be used server-side
+    // Spotify client credentials must remain server-only.
     this.clientId = process.env.SPOTIFY_CLIENT_ID || process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
-    this.clientSecret = process.env.SPOTIFY_CLIENT_SECRET || process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '';
+    this.clientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
   }
 
   private async getAccessToken(): Promise<string> {

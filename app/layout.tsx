@@ -2,18 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ade-eta.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://festival-lineup-data-platform.vercel.app"),
   title: {
-    default: "LineupBase | Electronic Music Artist Directory",
-    template: "%s | LineupBase",
+    default: "Festival Lineup Data Platform",
+    template: "%s | Festival Lineup Data Platform",
   },
-  description: "Find electronic music artists by country, genre, subgenre, event appearances, Spotify data, images, and source metadata.",
+  description: "Turn festival programs into normalized, linked, quality-scored artist and event data.",
   openGraph: {
-    title: "LineupBase Artist Directory",
-    description: "Electronic music artist directory for people and firms finding artists by country, genre, subgenre, and metadata depth.",
+    title: "Festival Lineup Data Platform",
+    description: "A fixture-backed demonstration of a festival data ingestion, entity-linking, enrichment, and validation pipeline.",
     type: "website",
     url: "/",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "Festival Lineup Data Platform" }],
   },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({

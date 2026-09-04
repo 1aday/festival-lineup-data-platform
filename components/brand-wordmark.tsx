@@ -36,7 +36,7 @@ export function BrandWordmark({
             textClassName
           )}
         >
-          LineupBase
+          Festival Data
         </span>
       ) : null}
     </span>

@@ -615,7 +615,7 @@ export const getCountryGenreIndex = cache(async (): Promise<SeoCountryGenre[]> =
         } satisfies SeoCountryGenre;
       })
     )
-    .filter(Boolean)
+    .filter((row): row is SeoCountryGenre => row !== null)
     .sort((a, b) => b.artistCount - a.artistCount || b.eventCount - a.eventCount)
     .slice(0, 500);
 });
